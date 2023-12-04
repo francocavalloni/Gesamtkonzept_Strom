@@ -1,38 +1,18 @@
 import pandas as pd
 import datetime
+import importlib
 import sys
-sys.path.insert(1, 'Module')
-from read_1 import date_titles, title, data_S
-from __main__ import LG_name, Sim_LG, öl_verbrauch, PV_neu, Faktor_Grenze, Faktor_laden, Eigenverbrauch_grenze, output_excel_S, Speicher, Eigenverbrauch, \
-    leistungsspitzenpreis, hochtarif, niedertarif, rueckspeisungstarif, öl_tarif,\
-    JahreskostenPV_var, A_BS, Faktor_vergünstigung, Capex_PV, jährliche_Ausgaben_PV, EIV, \
-    ELKW_Sim, elkw1_S, elkw2_S, elkw3_S, Verbrauch, ladeleistungDC, Kapazität_Wechselbatterie, ELKW_SOC_limit_Ruhezeit, schnellladung, reserve_akku , tarif_schnellladen, Grenze_SOC_Raststätte_laden, laden_30min_raststätte, JahreskostenELKW_var, Jahreskosten_dc_ladestation, \
-    EPKW_Sim, ac_ladestation_inv, ac_ladestation_unterhalt, durchsch_kapazität, durchsch_Reichweite, ladeleistung_stationen, epkw_ladekapazitaet, epkw_wochenstart_kWh, JahreskostenLKW_var, N_Ladestationen, Jahreskosten_ac_ladestation,\
-    WELKW_Sim, Kapazität_Wechselbatterie, welkw1_S, welkw2_S, welkw3_S, SOC_fuer_wechsel, Kosten_Wechselbatterie, JahreskostenWELKW_var
+from read_input_excel import *
+from read_LG_PV_V1 import date_titles, title, data_S
+from calc_BC_V1 import öl_verbrauch, öl_tarif,JahreskostenPV_var, A_BS, Capex_PV, jährliche_Ausgaben_PV, \
+    JahreskostenELKW_var, Jahreskosten_dc_ladestation, ac_ladestation_inv, ac_ladestation_unterhalt, \
+    JahreskostenLKW_var, Jahreskosten_ac_ladestation,JahreskostenWELKW_var,Kosten_Wechselbatterie, EIV_calc, \
+    lkw_inv, lkw_betriebskosten, lkw_Energiekosten,lkw_steuern, lkw_strecke, N_lkw
 if ELKW_Sim >=1 or WELKW_Sim>=1:
-    from read_M_1 import data_S, elkw1_summe_break_diff, elkw2_summe_break_diff, elkw3_summe_break_diff
+    from read_LKW_V1 import data_S, elkw1_summe_break_diff, elkw2_summe_break_diff, elkw3_summe_break_diff
+sys.path.insert(1, 'Module')
 
 print("Simulation Running")
-
-# Dataframes Resultate Jahreswerte BILANZ TOTAL
-totname1 = "Netzbezug total [kWh/a]"
-totname2 = "Rückspeisung total [kWh/a]"
-totname3 = "Lastspitzen total [kW/a]"
-totname4 = "Auswärtsladen elkw + Batteriewechsel bei Wechselsystem total [kWh/a]"
-totname5 = "Eigenverbrauch total [kWh/a]"
-totname6 = "Lastspitzenreduktion total [kW/a]"
-totname7 = "Kosten Netzbezug [CHF/a]"
-totname8 = "Kosten Lastspitzen [CHF/a]"
-totname9 = "Kosten Auswärtsladen + Batteriewechsel bei Wechselsystem [CHF/a]"
-totname10 = "Kosten Strom [CHF/a]"
-totname11 = "Einnahmen Rückspeisung [CHF/a]"
-totname12 = "Kosten Thermoöl [CHF/a]"
-totname13 = "Jahreskosten Investition und Unterhalt [CHF/a]"
-totname14 = "Kosten total Variante [CHF/a]"
-names_BILANZ_TOTAL = ["jährliche Lastreduktion [kW/a]", "jährliche Eigenverbrauchserhöhung [kWh/a]", "jährliche Einsparung_PS [CHF/a]", "jährliche Einsparung_EV [CHF/a]", "jährlicher Gewinn Rückspeisung [CHF/a]", "Jahreskosten [CHF/a]", "Businesscase PV und BS [CHF/a]", ]
-names_BILANZ_TOTAL = [totname1, totname2, totname3, totname4, totname5, totname6, totname7, totname8, totname9, totname10, totname11, totname12, totname13, totname14]
-BILANZ_TOTAL = pd.DataFrame(index=range(len(names_BILANZ_TOTAL)), columns=[output_excel_S])
-BILANZ_TOTAL[output_excel_S] = names_BILANZ_TOTAL
 
 LG_S = data_S
 LG_S["ANALYSE_SPITZE"] = LG_S["kW_PV_S"]
@@ -44,12 +24,11 @@ weekday = LG_S.columns.get_loc('Weekday')
 month = LG_S.columns.get_loc('month')
 zeit = LG_S.columns.get_loc('Uhrzeit')
 date = LG_S.columns.get_loc('new_Date')
-
 month_titles = pd.date_range(title[0],title[-1], freq='MS').strftime("%b-%Y").tolist()
-
 counterLR = 0
 
 if ELKW_Sim >= 1:
+    print("Simulation ELKW")
     from Analyse_V1 import LG_S, new_monthly_limit
     #Set Dataframes
     names_Bilanz_ELKW = ["Speicherkapazität [kWh]", "Verbrauch [kWh/km]", "Energiebezug Speicher [kWh/a]", "Netzbezug [kWh/a]", "Eigenverbrauchserhöhung [kWh/a]",
@@ -121,7 +100,7 @@ if ELKW_Sim >= 1:
             if ELKW_Sim >= 1:
                 #### unterwegs
                 if status_elkw == 1:
-                    elkw_verbrauch = distance_elkw * Verbrauch
+                    elkw_verbrauch = distance_elkw * verbrauch_elkw
                     elkw_SOC = elkw_SOC - (elkw_verbrauch / elkw_S)
                     elkw_GES_verbauch = elkw_GES_verbauch + elkw_verbrauch
                     if elkw_SOC <= 0:
@@ -146,10 +125,10 @@ if ELKW_Sim >= 1:
                     elkw_Energiebezug = elkw_Energiebezug + elkw_ladeleistung / 4
                     elkw_Eigenverbrauch = elkw_Eigenverbrauch + elkw_ladeleistung / 4
                 #### laden mit netz
-                if elkw_SOC < ELKW_SOC_limit_Ruhezeit and elkw_ladeleistung_r < ladeleistungDC and status_elkw == 0 \
-                    or totdistance_elkw > (1 - reserve_akku) * elkw_S * elkw_SOC / Verbrauch and elkw_SOC < 1 and status_elkw == 0 and elkw_ladeleistung_r < ladeleistungDC and datetime.datetime.strptime(str(zeit_S), "%H:%M:%S") < datetime.datetime.strptime("12:00:00", "%H:%M:%S") \
-                    or totdistance_elkw / 2 > (1 - reserve_akku) * elkw_S * elkw_SOC / Verbrauch and elkw_SOC < 1 and status_elkw == -2 and elkw_ladeleistung_r < ladeleistungDC and beladen_elkw > 1\
-                    or totdistance_elkw > (1 - reserve_akku) * elkw_S * elkw_SOC / Verbrauch and elkw_SOC < 1 and status_elkw == -1 and elkw_ladeleistung_r < ladeleistungDC:
+                if elkw_SOC < elkw_soc_limit_ruhezeit and elkw_ladeleistung_r < ladeleistungDC and status_elkw == 0 \
+                    or totdistance_elkw > (1 - elkw_reserve_akku) * elkw_S * elkw_SOC / verbrauch_elkw and elkw_SOC < 1 and status_elkw == 0 and elkw_ladeleistung_r < ladeleistungDC and datetime.datetime.strptime(str(zeit_S), "%H:%M:%S") < datetime.datetime.strptime("12:00:00", "%H:%M:%S") \
+                    or totdistance_elkw / 2 > (1 - elkw_reserve_akku) * elkw_S * elkw_SOC / verbrauch_elkw and elkw_SOC < 1 and status_elkw == -2 and elkw_ladeleistung_r < ladeleistungDC and beladen_elkw > 1\
+                    or totdistance_elkw > (1 - elkw_reserve_akku) * elkw_S * elkw_SOC / verbrauch_elkw and elkw_SOC < 1 and status_elkw == -1 and elkw_ladeleistung_r < ladeleistungDC:
                     ladeleistung_netz = ladeleistungDC
                     if datetime.datetime.strptime(str(zeit_S), "%H:%M:%S") < datetime.datetime.strptime("04:00:00", "%H:%M:%S") and last_S + ladeleistungDC*(4-elkw) > ps_grenze:
                         ladeleistung_netz = (ps_grenze-last_S)/elkw #kW
@@ -163,7 +142,7 @@ if ELKW_Sim >= 1:
                     elkw_Energiebezug = elkw_Energiebezug + elkw_ladeleistung / 4
                     elkw_Netzbezug = elkw_Netzbezug + elkw_ladeleistung / 4
                 #### laden auswärts, wenn soc zu tief für rückweg, mit eingerechneter reserve von 10%, mittagspause
-                if totdistance_elkw / 2 > (1 - reserve_akku) * elkw_S * elkw_SOC / Verbrauch and elkw_SOC < 1 and status_elkw == (-2) and beladen_elkw == 1 and elkw_ladeleistung == 0:
+                if totdistance_elkw / 2 > (1 - elkw_reserve_akku) * elkw_S * elkw_SOC / verbrauch_elkw and elkw_SOC < 1 and status_elkw == (-2) and beladen_elkw == 1 and elkw_ladeleistung == 0:
                     elkw_ladeleistung = schnellladung
                     elkw_SOC_t = elkw_SOC + elkw_ladeleistung / 4 / elkw_S
                     if elkw_SOC_t > 1:
@@ -172,7 +151,7 @@ if ELKW_Sim >= 1:
                     ladeleistung_elkw1_a = elkw_ladeleistung
                     elkw_netzbezugauswaerts = elkw_netzbezugauswaerts + elkw_ladeleistung / 4
                     elkw_Energiebezug = elkw_Energiebezug + elkw_ladeleistung / 4
-                if status_elkw == 1 and elkw_SOC < Grenze_SOC_Raststätte_laden and Raststätte_verzögerung == 0:
+                if status_elkw == 1 and elkw_SOC < grenze_soc_raststätte_laden and Raststätte_verzögerung == 0:
                     Raststätte_verzögerung = 2
                     target_date = date_S
                     target_time =  datetime.datetime.combine(date_S, zeit_S)
@@ -191,17 +170,17 @@ if ELKW_Sim >= 1:
                 INFO_ELKW.iat[row, elkw_last] = last_S
                 INFO_ELKW.iat[row, elkw_rueck] = ruecksp
                 INFO_ELKW.iat[row, elkw_soc] = elkw_SOC
-                if (weekday_S < 5 and datetime.datetime.strptime(str(zeit_S), "%H:%M:%S") > datetime.datetime.strptime("07:00:00", "%H:%M:%S")
-                    and datetime.datetime.strptime(str(zeit_S), "%H:%M:%S") <= datetime.datetime.strptime("20:00:00","%H:%M:%S")) \
-                    or (weekday_S == 5 and datetime.datetime.strptime(str(zeit_S),"%H:%M:%S") > datetime.datetime.strptime("07:00:00", "%H:%M:%S")
-                    and datetime.datetime.strptime(str(zeit_S), "%H:%M:%S") <= datetime.datetime.strptime("13:00:00", "%H:%M:%S")):
+                if (weekday_S < 5 and datetime.datetime.strptime(str(zeit_S), "%H:%M:%S") > datetime.datetime.strptime(str(zeit_hochtarif_woche_start), "%H:%M:%S")
+                    and datetime.datetime.strptime(str(zeit_S), "%H:%M:%S") <= datetime.datetime.strptime(str(zeit_hochtarif_woche_ende), "%H:%M:%S")) \
+                    or (weekday_S == 5 and datetime.datetime.strptime(str(zeit_S),"%H:%M:%S") > datetime.datetime.strptime(str(zeit_hochtarif_samstag_start), "%H:%M:%S")
+                    and datetime.datetime.strptime(str(zeit_S), "%H:%M:%S") <= datetime.datetime.strptime(str(zeit_hochtarif_samstag_ende), "%H:%M:%S")):
                     preis = elkw_ladeleistung_n / 4 * hochtarif
                 else:
                     preis = elkw_ladeleistung_n / 4 * niedertarif
                 elkw_summe_preis = elkw_summe_preis + preis
                 LG_S.iat[row, LG_S.columns.get_loc("ANALYSE_SPITZE")] = last_S
         BILANZ_ELKW.iat[0, counter_title] = elkw_S
-        BILANZ_ELKW.iat[1, counter_title] = Verbrauch
+        BILANZ_ELKW.iat[1, counter_title] = verbrauch_elkw
         BILANZ_ELKW.iat[2, counter_title] = elkw_Energiebezug
         BILANZ_ELKW.iat[3, counter_title] = round(elkw_Netzbezug)
         BILANZ_ELKW.iat[4, counter_title] = round(elkw_Eigenverbrauch)
@@ -220,6 +199,7 @@ if ELKW_Sim >= 1:
         BILANZ_ELKW.iat[row, 4] = BILANZ_ELKW.iat[row, 1] + BILANZ_ELKW.iat[row, 2] + BILANZ_ELKW.iat[row, 3]
 
 if WELKW_Sim >= 1:
+    print("Simulation WELKW")
     from Analyse_V1 import LG_S, new_monthly_limit
     #Set Dataframes
     names_Bilanz_WELKW = ["Speicherkapazität [kWh]", "Verbrauch [kWh/km]", "Energiebezug Speicher [kWh/a]", "Netzbezug [kWh/a]", "Eigenverbrauchserhöhung [kWh/a]",
@@ -290,7 +270,7 @@ if WELKW_Sim >= 1:
             if WELKW_Sim >= 1:
                 #### unterwegs
                 if status_welkw == 1:
-                    welkw_verbrauch = distance_welkw * Verbrauch
+                    welkw_verbrauch = distance_welkw * verbrauch_welkw
                     welkw_SOC = welkw_SOC - (welkw_verbrauch / welkw_S)
                     welkw_GES_verbauch = welkw_GES_verbauch + welkw_verbrauch
                     if welkw_SOC <= 0:
@@ -315,10 +295,10 @@ if WELKW_Sim >= 1:
                     welkw_Energiebezug = welkw_Energiebezug + welkw_ladeleistung / 4
                     welkw_Eigenverbrauch = welkw_Eigenverbrauch + welkw_ladeleistung / 4
                 #### laden mit netz
-                if welkw_SOC < ELKW_SOC_limit_Ruhezeit and welkw_ladeleistung_r < ladeleistungDC and status_welkw == 0 \
-                    or totdistance_welkw > (1 - reserve_akku) * welkw_S * welkw_SOC / Verbrauch and welkw_SOC < 1 and status_welkw == 0 and welkw_ladeleistung_r < ladeleistungDC and datetime.datetime.strptime(str(zeit_S), "%H:%M:%S") < datetime.datetime.strptime("12:00:00", "%H:%M:%S") \
-                    or totdistance_welkw / 2 > (1 - reserve_akku) * welkw_S * welkw_SOC / Verbrauch and welkw_SOC < 1 and status_welkw == -2 and welkw_ladeleistung_r < ladeleistungDC and beladen_welkw > 1\
-                    or totdistance_welkw > (1 - reserve_akku) * welkw_S * welkw_SOC / Verbrauch and welkw_SOC < 1 and status_welkw == -1:
+                if welkw_SOC < welkw_soc_limit_ruhezeit and welkw_ladeleistung_r < ladeleistungDC and status_welkw == 0 \
+                    or totdistance_welkw > (1 - welkw_reserve_akku) * welkw_S * welkw_SOC / verbrauch_welkw and welkw_SOC < 1 and status_welkw == 0 and welkw_ladeleistung_r < ladeleistungDC and datetime.datetime.strptime(str(zeit_S), "%H:%M:%S") < datetime.datetime.strptime("12:00:00", "%H:%M:%S") \
+                    or totdistance_welkw / 2 > (1 - welkw_reserve_akku) * welkw_S * welkw_SOC / verbrauch_welkw and welkw_SOC < 1 and status_welkw == -2 and welkw_ladeleistung_r < ladeleistungDC and beladen_welkw > 1\
+                    or totdistance_welkw > (1 - welkw_reserve_akku) * welkw_S * welkw_SOC / verbrauch_welkw and welkw_SOC < 1 and status_welkw == -1:
                     ladeleistung_netz = ladeleistungDC
                     if datetime.datetime.strptime(str(zeit_S), "%H:%M:%S") < datetime.datetime.strptime("04:00:00","%H:%M:%S") and last_S + ladeleistungDC * (4 - welkw) > ps_grenze:
                         ladeleistung_netz = (ps_grenze - last_S) / welkw  # kW
@@ -332,7 +312,7 @@ if WELKW_Sim >= 1:
                     welkw_Energiebezug = welkw_Energiebezug + welkw_ladeleistung / 4
                     welkw_Netzbezug = welkw_Netzbezug + welkw_ladeleistung / 4
                 #### laden auswärts, wenn soc zu tief für rückweg, mit eingerechneter reserve von 10%, mittagspause, zb. burnhaupt/ecublens
-                if totdistance_welkw / 2 > (1 - reserve_akku) * welkw_S * welkw_SOC / Verbrauch and welkw_SOC < 1 and status_welkw == (-2) and beladen_welkw == 1 and welkw_ladeleistung == 0:
+                if totdistance_welkw / 2 > (1 - welkw_reserve_akku) * welkw_S * welkw_SOC / verbrauch_welkw and welkw_SOC < 1 and status_welkw == (-2) and beladen_welkw == 1 and welkw_ladeleistung == 0:
                     welkw_ladeleistung = schnellladung
                     elkw_SOC_t = welkw_SOC + welkw_ladeleistung / 4 / welkw_S
                     if elkw_SOC_t > 1:
@@ -342,24 +322,24 @@ if WELKW_Sim >= 1:
                     welkw_netzbezugauswaerts = welkw_netzbezugauswaerts + welkw_ladeleistung / 4
                     welkw_Energiebezug = welkw_Energiebezug + welkw_ladeleistung / 4
                 ### unterwegs Akku tauschen bei raststätte/wechselstation
-                if status_welkw == 1 and welkw_SOC < SOC_fuer_wechsel:
+                if status_welkw == 1 and welkw_SOC < soc_fuer_wechsel:
                     welkw_SOC = welkw_SOC + Kapazität_Wechselbatterie / welkw_S
                     welkw_Energiebezug = welkw_Energiebezug + Kapazität_Wechselbatterie
                     welkw_counter_wechsel = welkw_counter_wechsel + 1
                 INFO_WELKW.iat[row, welkw_last] = last_S
                 INFO_WELKW.iat[row, welkw_rueck] = ruecksp
                 INFO_WELKW.iat[row, welkw_soc] = welkw_SOC
-                if (weekday_S < 5 and datetime.datetime.strptime(str(zeit_S), "%H:%M:%S") > datetime.datetime.strptime("07:00:00", "%H:%M:%S")
-                    and datetime.datetime.strptime(str(zeit_S), "%H:%M:%S") <= datetime.datetime.strptime("20:00:00","%H:%M:%S")) \
-                    or (weekday_S == 5 and datetime.datetime.strptime(str(zeit_S),"%H:%M:%S") > datetime.datetime.strptime("07:00:00", "%H:%M:%S")
-                    and datetime.datetime.strptime(str(zeit_S), "%H:%M:%S") <= datetime.datetime.strptime("13:00:00", "%H:%M:%S")):
+                if (weekday_S < 5 and datetime.datetime.strptime(str(zeit_S), "%H:%M:%S") > datetime.datetime.strptime(str(zeit_hochtarif_woche_start), "%H:%M:%S")
+                    and datetime.datetime.strptime(str(zeit_S), "%H:%M:%S") <= datetime.datetime.strptime(str(zeit_hochtarif_woche_ende), "%H:%M:%S")) \
+                    or (weekday_S == 5 and datetime.datetime.strptime(str(zeit_S),"%H:%M:%S") > datetime.datetime.strptime(str(zeit_hochtarif_samstag_start), "%H:%M:%S")
+                    and datetime.datetime.strptime(str(zeit_S), "%H:%M:%S") <= datetime.datetime.strptime(str(zeit_hochtarif_samstag_ende), "%H:%M:%S")):
                     preis = welkw_ladeleistung_n / 4 * hochtarif
                 else:
                     preis = welkw_ladeleistung_n / 4 * niedertarif
                 welkw_summe_preis = welkw_summe_preis + preis
                 LG_S.iat[row, LG_S.columns.get_loc("ANALYSE_SPITZE")] = last_S
         BILANZ_WELKW.iat[0, counter_title] = welkw_S
-        BILANZ_WELKW.iat[1, counter_title] = Verbrauch
+        BILANZ_WELKW.iat[1, counter_title] = verbrauch_welkw
         BILANZ_WELKW.iat[2, counter_title] = welkw_Energiebezug
         BILANZ_WELKW.iat[3, counter_title] = round(welkw_Netzbezug)
         BILANZ_WELKW.iat[4, counter_title] = round(welkw_Eigenverbrauch)
@@ -379,7 +359,8 @@ if WELKW_Sim >= 1:
     for row in range(1, len(BILANZ_WELKW)):
         BILANZ_WELKW.iat[row, 4] = BILANZ_WELKW.iat[row, 1] + BILANZ_WELKW.iat[row, 2] + BILANZ_WELKW.iat[row, 3]
 
-if EPKW_Sim ==1:
+if EPKW_Sim:
+    print("Simulation EPKW Ladestationen")
     names_Bilanz_EPKW = ["Energiebezug Speicher [kWh/a]", "Netzbezug [kWh/a]", "Eigenverbrauchserhöhung [kWh/a]",
                          "Kosten Netzbezug [CHF/a]", "Kosten Eigenverbrauch [CHF/a]", "Investition "+str(N_Ladestationen)+" Ladestationen [CHF]",
                          "Unterhalt "+str(N_Ladestationen)+" Ladestationen [CHF/a]", "Jahreskosten Inv + Unt [CHF/a]", "Jahreskosten total [CHF/a]"]
@@ -416,7 +397,7 @@ if EPKW_Sim ==1:
         month_S = LG_S.iat[row, month]
         ladeleistung_pkw = 0
         ####### Epkw schlaufe
-        if EPKW_Sim == 1:
+        if EPKW_Sim:
             if weekday_S == 0 and datetime.datetime.strptime(str(zeit_S), "%H:%M:%S") == datetime.datetime.strptime(
                     "00:00:00", "%H:%M:%S"):
                 Epkw_SOC = epkw_wochenstart_kWh  ##SOC bei 50% für wochenstart
@@ -465,13 +446,14 @@ if EPKW_Sim ==1:
     BILANZ_EPKW.iat[7, 1] = round(Jahreskosten_ac_ladestation)
     BILANZ_EPKW.iat[8, 1] = round(epkw_Netzbezug * hochtarif + epkw_Eigenverbrauch * rueckspeisungstarif + Jahreskosten_ac_ladestation)
 
-if Sim_LG == 1:
+if LG_Sim:
     names_Bilanz_LG = ["Netzbezug [kWh/a]", "Thermoölbezug [kWh/a]", "mittlerer Netzbezug [kW/a]",
                        "mittlere monatliche Lastspitze [kW/a]",
                        "Kosten Netzbezug [CHF/a]", "Kosten Thermoöl [CHF/a]", "Kosten Lastspitzen [CHF/a]",
                        "Kosten total Lastgang bestehend, ohne weitere Komponenten [CHF/a]"]
     BILANZ_LG = pd.DataFrame(index=range(len(names_Bilanz_LG)), columns=[output_excel_S])
     BILANZ_LG[output_excel_S] = names_Bilanz_LG
+    LG_name = "Bilanz vor Simulation"
     BILANZ_LG[LG_name] = None
     # max limit without PV
     ee = LG_S.groupby('month')['kW_Last'].transform(max) == LG_S['kW_Last']
@@ -508,7 +490,7 @@ if Sim_LG == 1:
             preis = last_b_S / 4 * niedertarif
         summe_preis_LG = summe_preis_LG + preis
     BILANZ_LG.iat[0, BILANZ_LG.columns.get_loc(LG_name)] = round(LG_S["kW_Last"].sum() / 4)
-    if LG_name == "Effizient + Thermoöl":
+    if öl_verbrauch >0:
         BILANZ_LG.iat[1, BILANZ_LG.columns.get_loc(LG_name)] = round(öl_verbrauch)
         BILANZ_LG.iat[5, BILANZ_LG.columns.get_loc(LG_name)] = round(öl_verbrauch * öl_tarif)
     else:
@@ -522,12 +504,36 @@ if Sim_LG == 1:
                                                            BILANZ_LG.iat[5, BILANZ_LG.columns.get_loc(LG_name)] + \
                                                            BILANZ_LG.iat[6, BILANZ_LG.columns.get_loc(LG_name)])
 
+# Dataframes Resultate Jahreswerte BILANZ TOTAL
+totname1 = "Netzbezug total [kWh/a]"
+totname2 = "Rückspeisung total [kWh/a]"
+totname3 = "Lastspitzen total [kW/a]"
+totname4 = "Auswärtsladen elkw + Batteriewechsel bei Wechselsystem total [kWh/a]"
+totname5 = "Eigenverbrauch total [kWh/a]"
+totname6 = "Lastspitzenreduktion total [kW/a]"
+totname7 = "Kosten Netzbezug [CHF/a]"
+totname8 = "Kosten Lastspitzen [CHF/a]"
+totname9 = "Kosten Auswärtsladen + Batteriewechsel bei Wechselsystem [CHF/a]"
+totname10 = "Kosten Strom [CHF/a]"
+totname11 = "Einnahmen Rückspeisung [CHF/a]"
+totname12 = "Kosten Thermoöl [CHF/a]"
+totname13 = "Jahreskosten Investition und Unterhalt [CHF/a]"
+totname14 = "Kosten total Variante [CHF/a]"
+names_BILANZ_TOTAL = ["jährliche Lastreduktion [kW/a]", "jährliche Eigenverbrauchserhöhung [kWh/a]", "jährliche Einsparung_PS [CHF/a]", "jährliche Einsparung_EV [CHF/a]", "jährlicher Gewinn Rückspeisung [CHF/a]", "Jahreskosten [CHF/a]", "Businesscase PV und BS [CHF/a]", ]
+names_BILANZ_TOTAL = [totname1, totname2, totname3, totname4, totname5, totname6, totname7, totname8, totname9, totname10, totname11, totname12, totname13, totname14]
+BILANZ_TOTAL = pd.DataFrame(index=range(len(names_BILANZ_TOTAL)), columns=[output_excel_S])
+BILANZ_TOTAL[output_excel_S] = names_BILANZ_TOTAL
+
 #PV bei S = 0
-if len(Speicher)>0:
+if PV_Sim or SP_Sim:
     if ELKW_Sim >0 or WELKW_Sim>0:
         for S in Speicher:
             del LG_S[S]
-    from Analyse_V2 import LG_S, new_monthly_limit
+    if SP_Sim:
+        print("Simulation Batteriespeicher")
+    import Analyse_V1
+    importlib.reload(Analyse_V1)
+    from Analyse_V1 import LG_S, new_monthly_limit
     names_BILANZ_PV = ["Produktion [kWh/a]", "Volllaststunden [h]", "Eigenverbrauch [kWh/a]", "Rückspeisung [kWh/a]",
                        "Lastreduktion [kW/a]", "jährliche Einsparung_EV [CHF/a]",
                        "jährlicher Gewinn Rückspeisung [CHF/a]", "jährliche Einsparung_PS [CHF/a]",
@@ -585,7 +591,7 @@ if len(Speicher)>0:
         sim_load = PROFIL_SPEICHER.columns.get_loc("Last_"+str(S))
         PROFIL_SPEICHER["Ruecksp_"+str(S)] = None
         sim_rueck = PROFIL_SPEICHER.columns.get_loc("Ruecksp_"+str(S))
-        if S > 0:
+        if S > 0 and SP_Sim:
             name_soc = str(S) + "_SOC"
             INFO_SPEICHER[name_soc] = None
             sim_soc = INFO_SPEICHER.columns.get_loc(name_soc)
@@ -626,16 +632,20 @@ if len(Speicher)>0:
         counter11 = 0
         counter12 = 0
         for row in range(0, len(LG_S)):
-            if ELKW_Sim ==0 and WELKW_Sim==0 and EPKW_Sim ==0:
+            if EPKW_Sim:
+                EPKW_Sim2 = 1
+            else:
+                EPKW_Sim2 = 0
+            if ELKW_Sim ==0 and WELKW_Sim==0 and EPKW_Sim2 ==0:
                 last_S = LG_S.iat[row, last]
                 ruecksp = LG_S.iat[row, rueck]
-            if ELKW_Sim > 0 and EPKW_Sim ==0:
+            if ELKW_Sim > 0 and EPKW_Sim2 ==0:
                 last_S = INFO_ELKW.iat[row, elkw_last]
                 ruecksp = INFO_ELKW.iat[row, elkw_rueck]
-            if WELKW_Sim > 0 and EPKW_Sim ==0:
+            if WELKW_Sim > 0 and EPKW_Sim2 ==0:
                 last_S = INFO_WELKW.iat[row, welkw_last]
                 ruecksp = INFO_WELKW.iat[row, welkw_rueck]
-            if EPKW_Sim ==1:
+            if EPKW_Sim2 ==1:
                 last_S = INFO_EPKW.iat[row, epkw_last]
                 ruecksp = INFO_EPKW.iat[row, epkw_rueck]
             last_pv = LG_S.iat[row, last]
@@ -648,7 +658,7 @@ if len(Speicher)>0:
             ladeleistung_N = 0
             ladeleistung_R = 0
     ####### Stationärer Speicher laden mit Netz oder von Rückspeisung PV
-            if ladestand < S and last_S <= (Faktor_laden * speichergrenze_S) and S > 0:
+            if ladestand < S and last_S <= (Faktor_laden * speichergrenze_S) and S > 0 and SP_Sim:
                 if datetime.datetime.strptime(str(zeit_S), "%H:%M:%S") >= datetime.datetime.strptime("20:00:00", "%H:%M:%S") \
                         or datetime.datetime.strptime(str(zeit_S), "%H:%M:%S")  <= datetime.datetime.strptime("06:00:00", "%H:%M:%S"):
                     ladeleistung_N = Faktor_laden * speichergrenze_S - last_S
@@ -679,7 +689,7 @@ if len(Speicher)>0:
             PROFIL_SPEICHER.iat[row, sim_rueck] = ruecksp
             PROFIL_SPEICHER.iat[row, sim_load] = last_S
     ####### stationärer Speicher für Eigenverbrauhcserhöhung verwenden, je nach Einstellung in main
-            if Eigenverbrauch > 0 and S>0:
+            if Eigenverbrauch > 0 and S>0 and SP_Sim:
                 if last_S < Eigenverbrauch_grenze and Eigenverbrauch > 1:
                     if last_S > ladestand * 4:
                         last_S = last_S - ladestand * 4
@@ -702,7 +712,7 @@ if len(Speicher)>0:
                             last_S = 0
                     PROFIL_SPEICHER.iat[row, sim_load] = last_S
             #Speicher entladen für Peak-Shaving
-            if last_S > speichergrenze_S and S>0:
+            if last_S > speichergrenze_S and S>0 and SP_Sim:
                 if last_S - speichergrenze_S <= S:
                     if last_S - speichergrenze_S <= ladestand * 4:
                         ladestand = ladestand - (last_S - speichergrenze_S)/4
@@ -723,7 +733,7 @@ if len(Speicher)>0:
                         ladestand = 0
                 PROFIL_SPEICHER.iat[row, sim_load] = last_S
             # Bilanzierung von Einnahmen aus Eigenverbraucherhöhung durch den Speicher
-            if S > 0:
+            if S > 0 and SP_Sim:
                 INFO_SPEICHER.iat[row, sim_ladeleistung] = ladeleistung_N
                 INFO_SPEICHER.iat[row, sim_ladeleistung_PV] = ladeleistung_R
                 SOC = 1 / S * ladestand
@@ -731,10 +741,10 @@ if len(Speicher)>0:
                 INFO_SPEICHER.iat[row, sim_ladest] = ladestand
                 eigenverbr_erh = ladeleistung_R/4
                 netzbezug_15min = ladeleistung_N/4
-                if (weekday_S < 5 and datetime.datetime.strptime(str(zeit_S), "%H:%M:%S") > datetime.datetime.strptime("07:00:00", "%H:%M:%S")
-                    and datetime.datetime.strptime(str(zeit_S), "%H:%M:%S") <= datetime.datetime.strptime("20:00:00", "%H:%M:%S")) \
-                        or (weekday_S == 5 and datetime.datetime.strptime(str(zeit_S), "%H:%M:%S") > datetime.datetime.strptime("07:00:00", "%H:%M:%S")
-                            and datetime.datetime.strptime(str(zeit_S), "%H:%M:%S") <= datetime.datetime.strptime("13:00:00", "%H:%M:%S")):
+                if (weekday_S < 5 and datetime.datetime.strptime(str(zeit_S), "%H:%M:%S") > datetime.datetime.strptime(str(zeit_hochtarif_woche_start), "%H:%M:%S")
+                    and datetime.datetime.strptime(str(zeit_S), "%H:%M:%S") <= datetime.datetime.strptime(str(zeit_hochtarif_woche_ende), "%H:%M:%S")) \
+                    or (weekday_S == 5 and datetime.datetime.strptime(str(zeit_S),"%H:%M:%S") > datetime.datetime.strptime(str(zeit_hochtarif_samstag_start), "%H:%M:%S")
+                    and datetime.datetime.strptime(str(zeit_S), "%H:%M:%S") <= datetime.datetime.strptime(str(zeit_hochtarif_samstag_ende), "%H:%M:%S")):
                     preis = ladeleistung_N/4 * hochtarif
                     preis_netzbezug = last_S/4 *hochtarif
                 else:
@@ -748,10 +758,10 @@ if len(Speicher)>0:
             if S == 0:
                 eigenverbr_erh = (round(LG_S.iat[row, LG_S.columns.get_loc("kW_Last")]) - LG_S.iat[row, last])/4 # von LG_S der Netzbezug
                 summe_eigen_PV = summe_eigen_PV + eigenverbr_erh
-                if (weekday_S < 5 and datetime.datetime.strptime(str(zeit_S), "%H:%M:%S") > datetime.datetime.strptime("07:00:00", "%H:%M:%S")
-                    and datetime.datetime.strptime(str(zeit_S), "%H:%M:%S") <= datetime.datetime.strptime("20:00:00", "%H:%M:%S")) \
-                        or (weekday_S == 5 and datetime.datetime.strptime(str(zeit_S), "%H:%M:%S") > datetime.datetime.strptime("07:00:00", "%H:%M:%S")
-                            and datetime.datetime.strptime(str(zeit_S), "%H:%M:%S") <= datetime.datetime.strptime("13:00:00", "%H:%M:%S")):
+                if (weekday_S < 5 and datetime.datetime.strptime(str(zeit_S), "%H:%M:%S") > datetime.datetime.strptime(str(zeit_hochtarif_woche_start), "%H:%M:%S")
+                    and datetime.datetime.strptime(str(zeit_S), "%H:%M:%S") <= datetime.datetime.strptime(str(zeit_hochtarif_woche_ende), "%H:%M:%S")) \
+                    or (weekday_S == 5 and datetime.datetime.strptime(str(zeit_S),"%H:%M:%S") > datetime.datetime.strptime(str(zeit_hochtarif_samstag_start), "%H:%M:%S")
+                    and datetime.datetime.strptime(str(zeit_S), "%H:%M:%S") <= datetime.datetime.strptime(str(zeit_hochtarif_samstag_ende), "%H:%M:%S")):
                     preis = eigenverbr_erh * hochtarif
                     preis_netzbezug = last_S / 4 * hochtarif
                     preis_netzbezug_pv = last_pv / 4 * hochtarif
@@ -830,7 +840,6 @@ if len(Speicher)>0:
             Ruecksp_tot = Ruecksp_tot + ruecksp/4
         #  Maximum Spitze pro monat ausgeben
         for column in range(0, len(SIM_MONTH)):
-            #max_load_month = SIM_MONTH.max(0, column)
             max_load_month = SIM_MONTH.max()
             counterM = 0
             for row in range(0, len(MAX_MONTH)):
@@ -849,7 +858,7 @@ if len(Speicher)>0:
         counterLR = counterLR + 1
         Jahreskosten_BS = 0
         #  Businesscase und Resulatet berechnen
-        if S == 0: ##PV Reiter: ["Produktion [kWh/a]", "Volllaststunden [h]", "Eigenverbrauch [kWh/a]", "Rückspeisung [kWh/a]", "Lastreduktion [kW/a]", "jährliche Einsparung_EV [CHF/a]", "jährlicher Gewinn Rückspeisung [CHF/a]", "jährliche Einsparung_PS [CHF/a]", "Investitionskosten [CHF]", "jährliche Ausgaben [CHF/a]", "jährliche Einnahmen [CHF/a]", "Amortisationszeit [a]", "Jahreskosten (25J) [CHF/a]", "Business Case PV (25J) [CHF/a]"]
+        if S == 0:
             einsparung_pv_ev = summe_preis_PV
             erhöhung_ruecks = LG_S["kW_RS_S"].sum()/4
             Produktion = (LG_S['kW_Last'].sum() - LG_S["kW_PV_S"].sum())/4 + erhöhung_ruecks
@@ -861,8 +870,8 @@ if len(Speicher)>0:
             BILANZ_PV.iat[5, BILANZ_PV.columns.get_loc(str(PV_neu))] = round(einsparung_pv_ev)
             BILANZ_PV.iat[6, BILANZ_PV.columns.get_loc(str(PV_neu))] = round(erhöhung_ruecks * rueckspeisungstarif)
             BILANZ_PV.iat[7, BILANZ_PV.columns.get_loc(str(PV_neu))] = round(LOAD_RED_PV[str(PV_neu)].sum() * leistungsspitzenpreis)
-            BILANZ_PV.iat[8, BILANZ_PV.columns.get_loc(str(PV_neu))] = round(EIV)
-            BILANZ_PV.iat[9, BILANZ_PV.columns.get_loc(str(PV_neu))] = round(Capex_PV - EIV)
+            BILANZ_PV.iat[8, BILANZ_PV.columns.get_loc(str(PV_neu))] = round(EIV_calc)
+            BILANZ_PV.iat[9, BILANZ_PV.columns.get_loc(str(PV_neu))] = round(Capex_PV - EIV_calc)
             BILANZ_PV.iat[10, BILANZ_PV.columns.get_loc(str(PV_neu))] = round(jährliche_Ausgaben_PV)
             jährliche_Einnahmen_PV = einsparung_pv_ev + erhöhung_ruecks * rueckspeisungstarif + LOAD_RED_PV[str(PV_neu)].sum() * leistungsspitzenpreis
             BILANZ_PV.iat[11, BILANZ_PV.columns.get_loc(str(PV_neu))] = round(jährliche_Einnahmen_PV)
@@ -870,17 +879,7 @@ if len(Speicher)>0:
             BILANZ_PV.iat[13, BILANZ_PV.columns.get_loc(str(PV_neu))] = round(JahreskostenPV_var)
             BC_PV = einsparung_pv_ev + erhöhung_ruecks * rueckspeisungstarif + LOAD_RED_PV[str(PV_neu)].sum() * leistungsspitzenpreis - JahreskostenPV_var
             BILANZ_PV.iat[14, BILANZ_PV.columns.get_loc(str(PV_neu))] = round(BC_PV)
-            #BILANZ_TOTAL.iat[0, sim_tot] = round(LOAD_RED_PV[str(PV_neu)].sum())
-            #BILANZ_TOTAL.iat[1, sim_tot] = (LG_S["kW_Last"].sum() - LG_S["kW_PV_S"].sum()) / 4
-            #BILANZ_TOTAL.iat[2, sim_tot] = LOAD_RED_PV[str(PV_neu)].sum() * leistungsspitzenpreis
-            #BILANZ_TOTAL.iat[3, sim_tot] = einsparung_pv_ev
-            #BILANZ_TOTAL.iat[4, sim_tot] = LG_S["kW_RS_S"].sum() / 4 * rueckspeisungstarif
-            #BILANZ_TOTAL.iat[5, sim_tot] = JahreskostenPV_var
-            #BILANZ_TOTAL.iat[6, sim_tot] = BC_PV
-        if S > 0:
-            #Jahreskosten_BS = (Capex_BS_var * S + Capex_BS_fix)*A_BS+BU_BS
-            Jahreskosten_BS = (-0.3617*S**2 + 1009.9*S + 6812.5) * (1 - Faktor_vergünstigung) * (A_BS+0.01)
-            #Jahreskosten_BS = (Capex_BS_var * S + Capex_BS_fix)/N_BS+BU_BS
+        if S > 0 and SP_Sim:
             lastredjahr = LOAD_RED[name_loadred].sum()
             einsparungjahr = lastredjahr * leistungsspitzenpreis
             BILANZ_BATTERIESPEICHER.iat[0, sim_res] = Energiebezug
@@ -891,16 +890,14 @@ if len(Speicher)>0:
             BILANZ_BATTERIESPEICHER.iat[5, sim_res] = einsparungjahr
             einsparungjahr_EV = summe_preis - INFO_SPEICHER[name_ladeleistung_PV].sum()/4*rueckspeisungstarif
             BILANZ_BATTERIESPEICHER.iat[6, sim_res] = einsparungjahr_EV
-            BILANZ_BATTERIESPEICHER.iat[7, sim_res] = (-0.3617 * S ** 2 + 1009.9 * S + 6812.5) * (1 - Faktor_vergünstigung)
+            if capex_sp_fnct:
+                BILANZ_BATTERIESPEICHER.iat[7, sim_res] = (-0.3617 * S ** 2 + 1009.9 * S + 6812.5) * (1 - Faktor_vergünstigung)
+                Jahreskosten_BS = (-0.3617 * S ** 2 + 1009.9 * S + 6812.5) * (1 - Faktor_vergünstigung) * (A_BS + BK_SP)
+            else:
+                BILANZ_BATTERIESPEICHER.iat[7, sim_res] = Capex_SP * (1 - Faktor_vergünstigung)
+                Jahreskosten_BS = Capex_SP * (1 - Faktor_vergünstigung) * (A_BS + BK_SP)
             BILANZ_BATTERIESPEICHER.iat[8, sim_res] = Jahreskosten_BS
             BILANZ_BATTERIESPEICHER.iat[9, sim_res] = einsparungjahr + einsparungjahr_EV - Jahreskosten_BS
-            #BILANZ_TOTAL.iat[0, sim_tot] = LOAD_RED_PV[str(PV_neu)].sum() + lastredjahr
-            #BILANZ_TOTAL.iat[1, sim_tot] = (LG_S["kW_Last"].sum() - LG_S["kW_PV_S"].sum()) / 4 + summe_eigen
-            #BILANZ_TOTAL.iat[2, sim_tot] = LOAD_RED_PV[str(PV_neu)].sum() * leistungsspitzenpreis + einsparungjahr
-            #BILANZ_TOTAL.iat[3, sim_tot] = einsparung_pv_ev + einsparungjahr_EV
-            #BILANZ_TOTAL.iat[4, sim_tot] = LG_S["kW_RS_S"].sum() / 4 * rueckspeisungstarif - INFO_SPEICHER[name_ladeleistung_PV].sum() / 4 * rueckspeisungstarif
-            #BILANZ_TOTAL.iat[5, sim_tot] = JahreskostenPV_var + Jahreskosten_BS
-            #BILANZ_TOTAL.iat[6, sim_tot] = einsparungjahr + einsparungjahr_EV - Jahreskosten_BS + BC_PV
         x = 0
         BILANZ_TOTAL.iat[0, sim_tot] = round(Netzbezug_tot)
         BILANZ_TOTAL.iat[1+x, sim_tot] = round(Ruecksp_tot)
@@ -933,5 +930,36 @@ if len(Speicher)>0:
             BILANZ_TOTAL.iat[12, sim_tot] = round(JahreskostenPV_var + Jahreskosten_BS + JahreskostenLKW_var + BILANZ_EPKW.iat[7,1])
         BILANZ_TOTAL.iat[13, sim_tot] = BILANZ_TOTAL.iat[9, sim_tot] + BILANZ_TOTAL.iat[10, sim_tot] + BILANZ_TOTAL.iat[11, sim_tot] + BILANZ_TOTAL.iat[12, sim_tot]  # Kostentotal variante
 
+
+Parameters_data = {
+    'LG_name': output_excel_S,
+    'Leistungsspitzenpreis [CHF/kW]': leistungsspitzenpreis,
+    'Tarifvariation [%]': "+"+str(round((Tar_var-1)*100)),
+    'Hochtarif [CHF/kWh]': hochtarif,
+    'Niedertarif [CHF/kWh]': niedertarif,
+    'Rückspeisungstarif [CHF/kWh]': rueckspeisungstarif,
+    'Öl_verbrauch [kWh/a]': round(öl_verbrauch),
+    'Öl_tarif [CHF/kWh]': öl_tarif,
+    'PV kWp [kW]': PV_neu}
+if len(Speicher)>1:
+    Parameters_data["Speicherkapazitäten [kWh]"] = Speicher
+    Parameters_data["Sicherheitsfaktor Speicher"] = Faktor_Grenze
+reshaped_para = {
+    'Bezeichnung': [key for key in Parameters_data.keys()],
+    'Wert': [value for value in Parameters_data.values()]}
+PARAMETERS = pd.DataFrame(reshaped_para)
+
+Diesel_data = {
+    'Investitionskosten 3 LKWs [CHF]': round(lkw_inv),
+    'Unterhaltskosten [CHF/a]': round(lkw_betriebskosten),
+    "Energiekosten [CHF/a]" : round(lkw_Energiekosten),
+    "Steuern [CHF/a]" : round(lkw_steuern),
+    'Total Strecke [km/a]': round(lkw_strecke),
+    "Lebensdauer [a]" : round(N_lkw),
+    'Jahreskosten [CHF/a]': round(JahreskostenLKW_var),}
+reshaped_diesel = {
+    'Bezeichnung': [key for key in Diesel_data.keys()],
+    'Wert': [value for value in Diesel_data.values()]}
+BILANZ_DIESEL = pd.DataFrame(reshaped_diesel)
 
 print('Simulation Done!')

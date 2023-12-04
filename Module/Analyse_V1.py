@@ -1,9 +1,9 @@
 import pandas as pd
 import numpy as np
 from itertools import compress
-from read_1 import data_S, date_titles, title
+from read_LG_PV_V1 import date_titles, title
 from Sim_V2 import LG_S
-from __main__ import output_excel_A, spalte_analyse, Speicher, Faktor_Grenze
+from read_input_excel import Speicher, Faktor_Grenze
 import sys
 sys.path.insert(1, 'Module')
 
@@ -13,7 +13,7 @@ LG_A = LG_S
 
 # list with kW, ordered per day from highest value to lowest
 sort_lst_kW = []
-kW_seq = [LG_A.loc[:, spalte_analyse][x:x + 96] for x in range(0, len(LG_A), 96)]
+kW_seq = [LG_A.loc[:, "ANALYSE_SPITZE"][x:x + 96] for x in range(0, len(LG_A), 96)]
 for row in np.array(kW_seq):
     col_kW = sorted(row, key=np.max, reverse=True)
     sort_lst_kW.append(col_kW)
