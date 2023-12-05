@@ -1,9 +1,8 @@
 import pandas as pd
-import time
-import datetime
 import sys
+import os
 sys.path.insert(1, 'Module')
-
+current_directory = os.getcwd()
 
 "Inputs aus excel einlesen"
 df_input = pd.read_excel('input_parameter.xlsx',1)
@@ -26,14 +25,15 @@ variable_names = df_paths['Variabel'].tolist()
 variable_values = df_paths['Eingabe'].tolist()
 paths_dict = dict(zip(variable_names, variable_values))
 output_excel_S = paths_dict.get('output_excel_S', 0)  #Ausgabedatei
-r_LG = pd.read_excel(paths_dict.get('r_LG', 0), 3) #Lastgang 1
-r_PV_F = pd.read_excel(paths_dict.get('r_PV', 0), 1) #PV_Fassaden
-r_PV_DS = pd.read_excel(paths_dict.get('r_PV', 0), 2) #PV_Dach_Süd
-r_PV_DOW = pd.read_excel(paths_dict.get('r_PV', 0), 3) #PV_Dach_OstWest
-r_PV_CP = pd.read_excel(paths_dict.get('r_PV', 0), 4) #PV_Dach_carport
-r_LKW1 = pd.read_excel(paths_dict.get('r_LKW', 0), 0)
-r_LKW2 = pd.read_excel(paths_dict.get('r_LKW', 0), 1)
-r_LKW3 = pd.read_excel(paths_dict.get('r_LKW', 0), 2)
+r_DIR = paths_dict.get('r_DIR', 0)
+r_LG = pd.read_excel(os.path.join(current_directory,r_DIR,paths_dict.get('r_LG', 0)), 3) #Lastgang 1
+r_PV_F = pd.read_excel(os.path.join(current_directory,r_DIR,paths_dict.get('r_PV', 0)), 1) #PV_Fassaden
+r_PV_DS = pd.read_excel(os.path.join(current_directory,r_DIR,paths_dict.get('r_PV', 0)), 2) #PV_Dach_Süd
+r_PV_DOW = pd.read_excel(os.path.join(current_directory,r_DIR,paths_dict.get('r_PV', 0)), 3) #PV_Dach_OstWest
+r_PV_CP = pd.read_excel(os.path.join(current_directory,r_DIR,paths_dict.get('r_PV', 0)), 4) #PV_Dach_carport
+r_LKW1 = pd.read_excel(os.path.join(current_directory,r_DIR,paths_dict.get('r_LKW', 0)), 0)
+r_LKW2 = pd.read_excel(os.path.join(current_directory,r_DIR,paths_dict.get('r_LKW', 0)), 1)
+r_LKW3 = pd.read_excel(os.path.join(current_directory,r_DIR,paths_dict.get('r_LKW', 0)), 2)
 Feiertage = ["01-01","01-02", "12-25", "12-26"]
 
 "Tarife aus excel einlesen"
