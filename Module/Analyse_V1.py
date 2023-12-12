@@ -4,10 +4,8 @@ from itertools import compress
 import sys
 sys.path.insert(1, 'Module')
 
-def analyse_peaks(LG_S,Speicher,Faktor_Grenze,date_titles,title):
-    print("Analyse für monatliche Spitze")
-
-    LG_A = LG_S
+def analyse_peaks(LG_A,Speicher,Faktor_Grenze,date_titles,title,ladeverlust):
+    print("Analyse für monatliche Leistungs Limite Peak-Shaving")
 
     # list with kW, ordered per day from highest value to lowest
     sort_lst_kW = []
@@ -31,19 +29,22 @@ def analyse_peaks(LG_S,Speicher,Faktor_Grenze,date_titles,title):
             sum_limit = 0
             for i in row:
                 sum_kWh = (i*(-1) * counter)/4 + sum_kWh
-                if sum_kWh >= S:
+                if sum_kWh >= S*(1-ladeverlust):
                     if counter < 2:
-                        new_limit = np.max(sort_lst_kW[row_number]) - sum_limit
+                        new_limit = np.max(sort_lst_kW[row_number]) - S*(1-ladeverlust)
                         limit_per_day.append(new_limit)
                         break
-                    if counter > 2:
-                        new_limit = np.max(sort_lst_kW[row_number]) - sum_limit
+                    if counter >= 2:
+                        new_limit = np.max(sort_lst_kW[row_number]) - sum_limit - (S*(1-ladeverlust)-(sum_kWh-(i*(-1) * counter)/4))*4/counter
+                        if sum_kWh == S*(1-ladeverlust):
+                            sum_limit = i * (-1) + sum_limit
+                            new_limit = np.max(sort_lst_kW[row_number]) - sum_limit
                         limit_per_day.append(new_limit)
                         break
                 sum_limit = i*(-1) + sum_limit
                 counter = counter + 1
-            if sum_kWh < S:
-                new_limit = np.max(sort_lst_kW[row_number]) - sum_limit - ((S - sum_kWh) / counter * 4)
+            if sum_kWh < S*ladeverlust:
+                new_limit = np.max(sort_lst_kW[row_number]) - sum_limit - ((S*ladeverlust - sum_kWh) / counter * 4)
                 limit_per_day.append(new_limit)
             row_number = row_number + 1
         lim_day = pd.DataFrame(limit_per_day)
@@ -82,29 +83,26 @@ def analyse_peaks(LG_S,Speicher,Faktor_Grenze,date_titles,title):
     monthly_load_red_all_Storage = pd.DataFrame.from_dict(dict(zip(Speicher, load_red)), orient='index').transpose()
     monthly_load_red_all_Storage.insert(0, "month", month_titles, True)
 
-    # new monthly limit
-    new_load_red = []
+    # new monthly limit caused by faktor Grenze
+    new_diff_for_max_limit = []
     for row in load_red:
         calc1 = []
         for i in row:
-            calc1.append(i-i*(1-Faktor_Grenze))
-        new_load_red.append(calc1)
+            calc1.append(i*Faktor_Grenze)
+        new_diff_for_max_limit.append(calc1)
     new_monthly_limit = []
     counter1 = 0
     for row in limit_month_all_Storage:
         counter2 = 0
         calc1 = []
         for i in row:
-            calc1.append(i + new_load_red[counter1][counter2])
+            calc1.append(i + new_diff_for_max_limit[counter1][counter2])
             counter2 = counter2 + 1
         counter1 = counter1 + 1
         new_monthly_limit.append(calc1)
     new_monthly_limit = pd.DataFrame.from_dict(dict(zip(Speicher, new_monthly_limit)), orient='index').transpose()
     new_monthly_limit.insert(0, "month_index", [1,2,3,4,5,6,7,8,9,10,11,12], True)
 
-    LG_S = pd.merge_ordered(LG_S, new_monthly_limit, left_on="month", right_on="month_index", how="left", fill_method="ffill")
-    print(new_monthly_limit)
-    print(LG_S)
-    print("check")
+    LG_S = pd.merge_ordered(LG_A, new_monthly_limit, left_on="month", right_on="month_index", how="left", fill_method="ffill")
     del LG_S["month_index"]
     return LG_S, new_monthly_limit

@@ -60,8 +60,10 @@ def plt_elkw(ELKW_Sim,INFO_ELKW,data_S):
             ax1.legend_.remove()
             ax2.legend_.remove()
             fig.legend(loc="upper right", bbox_to_anchor=(1, 1), bbox_transform=ax2.transAxes)
-            plt.title('Auswirkung E-LKW' + str(elkw))
-            plt.show()
+            title = "Auswirkung E-LKW" + str(elkw)+" (" + str(
+                datetime.datetime.strptime(start_time, '%Y-%m-%d %H:%M:%S').strftime('%d.%m')) + ")"
+            plt.title(title)
+            plt.savefig("plots/" + title + ".png")
     return plt.show()
 
 def plt_welkw(WELKW_Sim,INFO_WELKW,data_S):
@@ -117,7 +119,10 @@ def plt_welkw(WELKW_Sim,INFO_WELKW,data_S):
             ax1.legend_.remove()
             ax2.legend_.remove()
             fig.legend(loc="upper right", bbox_to_anchor=(1, 1), bbox_transform=ax2.transAxes)
-            plt.title('Auswirkung WE-LKW' + str(welkw))
+            title = "Auswirkung WE-LKW" + str(welkw)+" (" + str(
+                datetime.datetime.strptime(start_time, '%Y-%m-%d %H:%M:%S').strftime('%d.%m')) + ")"
+            plt.title(title)
+            plt.savefig("plots/" + title + ".png")
     return plt.show()
 
 def plt_epkw(INFO_EPKW,data_S,ELKW_Sim,INFO_ELKW,WELKW_Sim, INFO_WELKW):
@@ -189,7 +194,10 @@ def plt_epkw(INFO_EPKW,data_S,ELKW_Sim,INFO_ELKW,WELKW_Sim, INFO_WELKW):
         ax1.legend_.remove()
         ax2.legend_.remove()
         fig.legend(loc="upper right", bbox_to_anchor=(1, 1), bbox_transform=ax1.transAxes)
-        plt.title('Auswirkung E-PKW')
+        title = 'Auswirkung E-PKW (' + str(
+            datetime.datetime.strptime(start_time, '%Y-%m-%d %H:%M:%S').strftime('%d.%m')) + ")"
+        plt.title(title)
+        plt.savefig("plots/" + title + ".png")
     return plt.show()
 
 def plt_BS(Speicher,PROFIL_SPEICHER,INFO_SPEICHER):
@@ -228,7 +236,6 @@ def plt_BS(Speicher,PROFIL_SPEICHER,INFO_SPEICHER):
                     y_ax_limit = 1500
                 else:
                     y_ax_limit = 2000
-
                 ax1.set_ylim(0, y_ax_limit)
                 ax1.set_ylabel('Lastgang [kW]')
 
@@ -255,7 +262,10 @@ def plt_BS(Speicher,PROFIL_SPEICHER,INFO_SPEICHER):
                 ax1.legend_.remove()
                 ax2.legend_.remove()
                 fig.legend(loc="upper right", bbox_to_anchor=(1, 1), bbox_transform=ax2.transAxes)
-                plt.title('Auswirkung Batteriespeicher' + str(S))
+                title = 'Auswirkung Batteriespeicher' + str(S) + ' kWh (' + str(
+                    datetime.datetime.strptime(start_time, '%Y-%m-%d %H:%M:%S').strftime('%d.%m')) + ")"
+                plt.title(title)
+                plt.savefig("plots/" + title + ".png")
     return plt.show()
 
 def plt_PV(data_S,PV_neu):
@@ -294,5 +304,7 @@ def plt_PV(data_S,PV_neu):
         ax1.set_xticks(pd.date_range(first_tick, pd.Timestamp(end_time), freq='12H'))
         ax1.legend_.remove()
         fig.legend(loc="upper right", bbox_to_anchor=(1, 1), bbox_transform=ax1.transAxes)
-        plt.title('Auswirkung PV ' + str(PV_neu) + 'kWp')
+        title = 'Auswirkung PV ' + str(PV_neu) + ' kWp ('+str(datetime.datetime.strptime(start_time, '%Y-%m-%d %H:%M:%S').strftime('%d.%m'))+")"
+        plt.title(title)
+        plt.savefig("plots/" + title + ".png")
     return plt.show()
