@@ -23,8 +23,8 @@ thermooel_Sim = False
 "Paths aus excel einlesen"
 df_paths = pd.read_excel('input_parameter.xlsx',2)
 variable_names = df_paths['Variabel'].tolist()
-variable_values = df_paths['Eingabe Path'].tolist()
-variable_page = df_paths['Eingabe Page'].tolist()
+variable_values = df_paths['Eingabe Pfad'].tolist()
+variable_page = df_paths['Eingabe Seite'].tolist()
 paths_dict = dict(zip(variable_names, variable_values))
 paths_page_dict = dict(zip(variable_names, variable_page))
 output_excel_S = paths_dict.get('output_excel_S', 0)  #Ausgabedatei
