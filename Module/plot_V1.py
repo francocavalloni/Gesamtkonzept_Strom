@@ -64,7 +64,7 @@ def plt_elkw(ELKW_Sim,INFO_ELKW,data_S):
                 datetime.datetime.strptime(start_time, '%Y-%m-%d %H:%M:%S').strftime('%d.%m')) + ")"
             plt.title(title)
             plt.savefig("plots/" + title + ".png")
-    return
+    return plt.close('all')
 
 def plt_welkw(WELKW_Sim,INFO_WELKW,data_S):
     for welkw in range(1, WELKW_Sim + 1):
@@ -123,7 +123,7 @@ def plt_welkw(WELKW_Sim,INFO_WELKW,data_S):
                 datetime.datetime.strptime(start_time, '%Y-%m-%d %H:%M:%S').strftime('%d.%m')) + ")"
             plt.title(title)
             plt.savefig("plots/" + title + ".png")
-    return
+    return plt.close('all')
 
 def plt_epkw(INFO_EPKW,data_S,ELKW_Sim,INFO_ELKW,WELKW_Sim, INFO_WELKW):
     elkw = ELKW_Sim
@@ -198,7 +198,7 @@ def plt_epkw(INFO_EPKW,data_S,ELKW_Sim,INFO_ELKW,WELKW_Sim, INFO_WELKW):
             datetime.datetime.strptime(start_time, '%Y-%m-%d %H:%M:%S').strftime('%d.%m')) + ")"
         plt.title(title)
         plt.savefig("plots/" + title + ".png")
-    return
+    return plt.close('all')
 
 def plt_BS(Speicher,PROFIL_SPEICHER,INFO_SPEICHER):
     for S in Speicher:
@@ -260,11 +260,11 @@ def plt_BS(Speicher,PROFIL_SPEICHER,INFO_SPEICHER):
                 ax1.legend_.remove()
                 ax2.legend_.remove()
                 fig.legend(loc="upper right", bbox_to_anchor=(1, 1), bbox_transform=ax2.transAxes)
-                title = 'Auswirkung Batteriespeicher' + str(S) + ' kWh (' + str(
+                title = 'Auswirkung Batteriespeicher ' + str(S) + ' kWh (' + str(
                     datetime.datetime.strptime(start_time, '%Y-%m-%d %H:%M:%S').strftime('%d.%m')) + ")"
                 plt.title(title)
                 plt.savefig("plots/" + title + ".png")
-    return
+    return plt.close('all')
 
 def plt_PV(data_S,PV_neu):
     time_windows = [('2022-05-23 00:00:00', '2022-05-30 00:00:00'),
@@ -305,4 +305,4 @@ def plt_PV(data_S,PV_neu):
         title = 'Auswirkung PV ' + str(PV_neu) + ' kWp ('+str(datetime.datetime.strptime(start_time, '%Y-%m-%d %H:%M:%S').strftime('%d.%m'))+")"
         plt.title(title)
         plt.savefig("plots/" + title + ".png")
-    return
+    return plt.close('all')

@@ -1,9 +1,8 @@
 import pandas as pd
 import numpy as np
 from itertools import compress
-import sys
-sys.path.insert(1, 'Module')
 
+"Programm für die Analyse des Peak-Shaving Potenzials pro Speichergrösse. Gibt Auskunft über die maximale Reduktion ohne den Speicher zwischendurch zu laden."
 def analyse_peaks(LG_A,Speicher,Faktor_Grenze,date_titles,title,ladeverlust):
     print("Analyse für monatliche Leistungs Limite Peak-Shaving")
 

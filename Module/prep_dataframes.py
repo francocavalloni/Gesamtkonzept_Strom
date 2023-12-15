@@ -1,12 +1,17 @@
 import pandas as pd
-from read_input_excel import *
+from __main__ import Input_File
 from read_LG_PV_V1 import date_titles, title, data_S
 from calc_BC_V1 import öl_verbrauch, öl_tarif, JahreskostenLKW_var,  \
     lkw_inv, lkw_betriebskosten, lkw_Energiekosten,lkw_steuern, lkw_strecke, N_lkw
-if ELKW_Sim >=1 or WELKW_Sim>=1:
-    from read_LKW_V1 import data_S
+if Input_File:
+    from read_input_excel import *
+else:
+    from alternative_input import *
+
+"In diesem Skript werden die Dataframes für die Resultate vorbereitet."
 
 
+# Vorbereiten des Lastgangs für die Simulation
 LG_S = data_S
 LG_S["ANALYSE_SPITZE"] = LG_S["kW_PV_A"]
 columns = ['Time']
@@ -37,7 +42,6 @@ totname11 = "Einnahmen Rückspeisung [CHF/a]"
 totname12 = "Kosten Thermoöl [CHF/a]"
 totname13 = "Jahreskosten Investition und Unterhalt [CHF/a]"
 totname14 = "Kosten total Variante [CHF/a]"
-names_BILANZ_TOTAL = ["jährliche Lastreduktion [kW/a]", "jährliche Eigenverbrauchserhöhung [kWh/a]", "jährliche Einsparung_PS [CHF/a]", "jährliche Einsparung_EV [CHF/a]", "jährlicher Gewinn Rückspeisung [CHF/a]", "Jahreskosten [CHF/a]", "Businesscase PV und BS [CHF/a]", ]
 names_BILANZ_TOTAL = [totname1, totname2, totname3, totname4, totname5, totname6, totname7, totname8, totname9, totname10, totname11, totname12, totname13, totname14]
 BILANZ_TOTAL = pd.DataFrame(index=range(len(names_BILANZ_TOTAL)), columns=[output_excel_S])
 BILANZ_TOTAL[output_excel_S] = names_BILANZ_TOTAL
@@ -45,7 +49,7 @@ BILANZ_TOTAL[output_excel_S] = names_BILANZ_TOTAL
 #Set Dataframes ELKW
 names_Bilanz_ELKW = ["Speicherkapazität [kWh]", "Verbrauch [kWh/km]", "Energiebezug Speicher [kWh/a]", "Netzbezug [kWh/a]", "Eigenverbrauchserhöhung [kWh/a]",
                      "Auswärtsladen [kWh/a]",  "Mittagspause Verlängert um [min]", "Häufigkeit Pause an Raststätte 30min laden",
-                    "Kosten Netzbezug [CHF/a]","Kosten Laden Auswärts [CHF/a]","Kosten Eigenverbauch [CHF/a]",
+                    "Kosten Netzbezug [CHF/a]","Kosten Laden Auswärts [CHF/a]","Kosten Eigenverbrauch [CHF/a]",
                      "Summe Energiekosten [CHF/a]", "Jahreskosten Inv + Unt [CHF/a]", "Jahreskosten Ladestation DC Inv + Unt", "Kosten total ELKW [CHF/a]"]
 BILANZ_ELKW = pd.DataFrame(index=range(len(names_Bilanz_ELKW)), columns=[output_excel_S])
 BILANZ_ELKW[output_excel_S] = names_Bilanz_ELKW
@@ -67,7 +71,7 @@ INFO_ELKW["ELKW3_SOC"] = None
 #Set Dataframes WELKW
 names_Bilanz_WELKW = ["Speicherkapazität [kWh]", "Verbrauch [kWh/km]", "Energiebezug Speicher [kWh/a]", "Netzbezug [kWh/a]", "Eigenverbrauchserhöhung [kWh/a]",
                      "Auswärtsladen [kWh/a]",  "Mittagspause Verlängert um [min]", "Häufigkeit Batteriewechsel an Station [5min]", "Laden durch Batteriewechsel [kWh/a]",
-                    "Kosten Netzbezug [CHF/a]","Kosten Laden Auswärts [CHF/a]","Kosten Eigenverbauch [CHF/a]", "Kosten Batteriewechsel [CHF/a",
+                    "Kosten Netzbezug [CHF/a]","Kosten Laden Auswärts [CHF/a]","Kosten Eigenverbrauch [CHF/a]", "Kosten Batteriewechsel [CHF/a",
                      "Summe Energiekosten [CHF/a]", "Jahreskosten Inv + Unt [CHF/a]", "Jahreskosten Ladestation DC Inv + Unt" ,  "Kosten total ELKW [CHF/a]"]
 BILANZ_WELKW = pd.DataFrame(index=range(len(names_Bilanz_WELKW)), columns=[output_excel_S])
 BILANZ_WELKW[output_excel_S] = names_Bilanz_WELKW
@@ -162,10 +166,11 @@ Parameters_data = {
     'Hochtarif [CHF/kWh]': hochtarif,
     'Niedertarif [CHF/kWh]': niedertarif,
     'Rückspeisungstarif [CHF/kWh]': rueckspeisungstarif,
-    'Öl_verbrauch [kWh/a]': round(öl_verbrauch),
-    'Öl_tarif [CHF/kWh]': öl_tarif,
     'PV kWp [kW]': PV_neu}
-if len(Speicher)>1:
+if thermooel_Sim:
+    Parameters_data["Öl_verbrauch [kWh/a]"] = round(öl_verbrauch)
+    Parameters_data["Öl_tarif [CHF/kWh]"] = öl_tarif
+if SP_Sim:
     Parameters_data["Speicherkapazitäten [kWh]"] = Speicher
     Parameters_data["Sicherheitsfaktor Speicher"] = Faktor_Grenze
 reshaped_para = {

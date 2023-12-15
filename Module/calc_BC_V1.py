@@ -1,5 +1,9 @@
 import numpy as np
-from read_input_excel import EIV_pv_fnct,kapazität_wechselbatterie,tarif_schnellladen,Tar_var,r_LKW1,r_LKW2,r_LKW3,Zins_WACC,PV_Fassade,PV_Dach,fassade_süd,fassade_west,fassade_nord,fassade_ost,N_Ladestationen,A_Bedarf,capex_pv_fnct
+from __main__ import Input_File
+if Input_File:
+    from read_input_excel import *
+else:
+    from alternative_input import *
 
 #Daten für Öl Vergleich
 öl_verbrauch = 900000  # kwh

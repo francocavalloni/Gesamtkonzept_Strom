@@ -1,7 +1,9 @@
 import datetime
-import sys
-sys.path.insert(1, 'Module')
-from read_input_excel import r_LG_S, r_LG_A, r_PV_F, r_PV_DS, r_PV_DOW, dach_süd, dach_ostwest, fassade_süd, fassade_west, fassade_nord, fassade_ost, Feiertage, r_PV_CP, carport
+from __main__ import Input_File
+if Input_File:
+    from read_input_excel import r_LG_S, r_LG_A, r_PV_F, r_PV_DS, r_PV_DOW, dach_süd, dach_ostwest, fassade_süd, fassade_west, fassade_nord, fassade_ost, Feiertage, r_PV_CP, carport
+else:
+    from alternative_input import r_LG_S, r_LG_A, r_PV_F, r_PV_DS, r_PV_DOW, dach_süd, dach_ostwest, fassade_süd, fassade_west, fassade_nord, fassade_ost, Feiertage, r_PV_CP, carport
 
 print("Lastgang lesen und PV Eigenverbrauch berechnen")
 

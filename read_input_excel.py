@@ -1,8 +1,7 @@
 import pandas as pd
-import sys
 import os
-sys.path.insert(1, 'Module')
-current_directory = os.getcwd()
+
+"Einlesen des Excels mit den Input Parametern"
 
 "Inputs aus excel einlesen"
 df_input = pd.read_excel('input_parameter.xlsx',1)
@@ -19,6 +18,7 @@ SP_Sim = eval(input_dict.get('SP_Sim', 0))
 excel = eval(input_dict.get('excel', 0))
 plot = eval(input_dict.get('plot', 0))
 LKW_Sim = False
+thermooel_Sim = False
 
 "Paths aus excel einlesen"
 df_paths = pd.read_excel('input_parameter.xlsx',2)
@@ -29,6 +29,7 @@ paths_dict = dict(zip(variable_names, variable_values))
 paths_page_dict = dict(zip(variable_names, variable_page))
 output_excel_S = paths_dict.get('output_excel_S', 0)  #Ausgabedatei
 r_DIR = paths_dict.get('r_DIR', 0)
+current_directory = os.getcwd()
 r_LG_S = pd.read_excel(os.path.join(current_directory, r_DIR, paths_dict.get('r_LG_S', 0)), paths_page_dict.get('r_LG_S', 0)-1) #Lastgang 1
 r_LG_A = pd.read_excel(os.path.join(current_directory, r_DIR, paths_dict.get('r_LG_A', 0)), paths_page_dict.get('r_LG_A', 0)-1) #Lastgang 1
 r_PV_F = pd.read_excel(os.path.join(current_directory,r_DIR,paths_dict.get('r_PV', 0)), 1) #PV_Fassaden
@@ -49,10 +50,10 @@ tarife_dict = dict(zip(variable_names, variable_values))
 Tar_var = tarife_dict.get('Tar_var', 0)
 mwst = tarife_dict.get('mwst', 0)
 leistungsspitzenpreis = tarife_dict.get('leistungsspitzenpreis', 0)
-hochtarif = tarife_dict.get('hochtarif', 0) * (mwst+1)
-niedertarif = tarife_dict.get('niedertarif', 0) * (mwst+1)
-rueckspeisungstarif = tarife_dict.get('rueckspeisungstarif', 0)
-tarif_schnellladen = tarife_dict.get('tarif_schnellladen', 0)
+hochtarif = tarife_dict.get('hochtarif', 0) * (mwst+1) *Tar_var
+niedertarif = tarife_dict.get('niedertarif', 0) * (mwst+1)*Tar_var
+rueckspeisungstarif = tarife_dict.get('rueckspeisungstarif', 0)*Tar_var
+tarif_schnellladen = tarife_dict.get('tarif_schnellladen', 0)*Tar_var
 Zins_WACC = tarife_dict.get('Zins_WACC', 0)
 zeit_hochtarif_woche_start = tarife_dict.get('zeit_hochtarif_woche_start', 0)
 zeit_hochtarif_woche_ende = tarife_dict.get('zeit_hochtarif_woche_ende', 0)
